@@ -2,6 +2,7 @@ package com.fixit.api.service;
 
 import com.fixit.api.dto.OrdemServicoRequestDTO;
 import com.fixit.api.dto.OrdemServicoResponseDTO;
+import com.fixit.api.dto.TriagemIaResponseDTO;
 import com.fixit.api.exception.BusinessException;
 import com.fixit.api.exception.ResourceNotFoundException;
 import com.fixit.api.model.Ocorrencia;
@@ -20,27 +21,52 @@ public class OrdemServicoService {
 
     private final OrdemServicoRepository ordemServicoRepository;
     private final OcorrenciaService ocorrenciaService;
+    private final TriagemIaService triagemIaService;
 
     @Transactional
     public OrdemServicoResponseDTO criar(OrdemServicoRequestDTO dto) {
-        Ocorrencia ocorrencia = ocorrenciaService.buscarEntidadePorId(dto.ocorrenciaId());
+        Ocorrencia ocorrencia = validarOcorrenciaElegivelParaOs(dto.ocorrenciaId());
 
-        if (ordemServicoRepository.findByOcorrenciaId(ocorrencia.getId()).isPresent()) {
-            throw new BusinessException("Já existe uma Ordem de Serviço vinculada à ocorrência de ID: " + ocorrencia.getId());
-        }
+        String parecerIa = triagemIaService.gerarParecerTecnico(
+                ocorrencia,
+                dto.nivelUrgencia(),
+                dto.equipeResponsavel().trim()
+        );
 
-        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADO
-                || ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDO) {
-            throw new BusinessException("Não é possível emitir Ordem de Serviço para ocorrência com status: " + ocorrencia.getStatus());
-        }
+        OrdemServico ordemServico = ordemServicoRepository.findByOcorrenciaId(ocorrencia.getId())
+                .orElseGet(() -> OrdemServico.builder()
+                        .protocolo(UUID.randomUUID().toString())
+                        .ocorrencia(ocorrencia)
+                        .build());
 
-        OrdemServico ordemServico = OrdemServico.builder()
-                .protocolo(UUID.randomUUID().toString())
-                .nivelUrgencia(dto.nivelUrgencia())
-                .equipeResponsavel(dto.equipeResponsavel().trim())
-                .dataPrevistaConclusao(dto.dataPrevistaConclusao())
-                .ocorrencia(ocorrencia)
-                .build();
+        ordemServico.setNivelUrgencia(dto.nivelUrgencia());
+        ordemServico.setParecerTecnicoIa(parecerIa);
+        ordemServico.setEquipeResponsavel(dto.equipeResponsavel().trim());
+        ordemServico.setDataPrevistaConclusao(dto.dataPrevistaConclusao());
+
+        ocorrencia.setStatus(StatusOcorrencia.EM_EXECUCAO);
+        ocorrencia.vincularOrdemServico(ordemServico);
+
+        OrdemServico salva = ordemServicoRepository.save(ordemServico);
+        return OrdemServicoResponseDTO.fromEntity(salva);
+    }
+
+    @Transactional
+    public OrdemServicoResponseDTO despacharAutomaticamenteComIa(Long ocorrenciaId) {
+        Ocorrencia ocorrencia = validarOcorrenciaElegivelParaOs(ocorrenciaId);
+
+        TriagemIaResponseDTO triagemIa = triagemIaService.analisarOcorrencia(ocorrencia);
+
+        OrdemServico ordemServico = ordemServicoRepository.findByOcorrenciaId(ocorrencia.getId())
+                .orElseGet(() -> OrdemServico.builder()
+                        .protocolo(UUID.randomUUID().toString())
+                        .ocorrencia(ocorrencia)
+                        .build());
+
+        ordemServico.setNivelUrgencia(triagemIa.nivelUrgenciaSugerido());
+        ordemServico.setParecerTecnicoIa(triagemIa.parecerTecnicoIa());
+        ordemServico.setEquipeResponsavel(triagemIa.equipeResponsavelSugerida());
+        ordemServico.setDataPrevistaConclusao(triagemIa.dataPrevistaConclusaoSugerida());
 
         ocorrencia.setStatus(StatusOcorrencia.EM_EXECUCAO);
         ocorrencia.vincularOrdemServico(ordemServico);
@@ -56,5 +82,22 @@ public class OrdemServicoService {
         return OrdemServicoResponseDTO.fromEntity(ordemServico);
     }
 
-}
+    @Transactional(readOnly = true)
+    public OrdemServicoResponseDTO buscarPorOcorrenciaId(Long ocorrenciaId) {
+        OrdemServico ordemServico = ordemServicoRepository.findByOcorrenciaId(ocorrenciaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ordem de Serviço não encontrada para a ocorrência de ID: " + ocorrenciaId));
+        return OrdemServicoResponseDTO.fromEntity(ordemServico);
+    }
 
+    private Ocorrencia validarOcorrenciaElegivelParaOs(Long ocorrenciaId) {
+        Ocorrencia ocorrencia = ocorrenciaService.buscarEntidadePorId(ocorrenciaId);
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADO
+                || ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDO) {
+            throw new BusinessException("Não é possível emitir Ordem de Serviço para ocorrência com status: " + ocorrencia.getStatus());
+        }
+
+        return ocorrencia;
+    }
+
+}

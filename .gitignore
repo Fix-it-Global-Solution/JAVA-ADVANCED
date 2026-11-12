@@ -3,6 +3,11 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Environment Variables & Secrets (NUNCA versionar chaves reais) ###
+.env
+.env.*
+!.env.example
+
 ### STS ###
 .apt_generated
 .classpath

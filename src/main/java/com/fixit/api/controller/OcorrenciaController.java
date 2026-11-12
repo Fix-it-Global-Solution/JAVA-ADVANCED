@@ -3,8 +3,11 @@ package com.fixit.api.controller;
 import com.fixit.api.dto.OcorrenciaRequestDTO;
 import com.fixit.api.dto.OcorrenciaResponseDTO;
 import com.fixit.api.dto.OcorrenciaStatusUpdateDTO;
+import com.fixit.api.dto.TriagemIaResponseDTO;
 import com.fixit.api.model.enums.StatusOcorrencia;
 import com.fixit.api.service.OcorrenciaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,11 +31,16 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/v1/ocorrencias")
 @RequiredArgsConstructor
+@Tag(name = "3. Ocorrências Urbanas", description = "Registro colaborativo de incidentes urbanos, listagem paginada e triagem inteligente com Google Gemini e RabbitMQ")
 public class OcorrenciaController {
 
     private final OcorrenciaService ocorrenciaService;
 
     @PostMapping
+    @Operation(
+            summary = "Abrir nova ocorrência urbana (Dispara Triagem Assíncrona RabbitMQ + Google Gemini)",
+            description = "Registra um novo chamado urbano e publica automaticamente um evento assíncrono na fila 'fila-triagem-zeladoria' do RabbitMQ para triagem via Google Gemini (gemini-1.5-flash)."
+    )
     public ResponseEntity<OcorrenciaResponseDTO> criar(@Valid @RequestBody OcorrenciaRequestDTO dto) {
         OcorrenciaResponseDTO criada = ocorrenciaService.criar(dto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -43,6 +51,10 @@ public class OcorrenciaController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "Listar ocorrências com paginação e filtro opcional por status",
+            description = "Retorna uma página de ocorrências urbanas ordenada por data de abertura decrescente, permitindo filtrar por status (ABERTO, EM_ANALISE, EM_EXECUCAO, CONCLUIDO, CANCELADO)."
+    )
     public ResponseEntity<Page<OcorrenciaResponseDTO>> listar(
             @RequestParam(required = false) StatusOcorrencia status,
             @PageableDefault(size = 10, sort = "dataAbertura", direction = Sort.Direction.DESC) Pageable pageable
@@ -51,6 +63,10 @@ public class OcorrenciaController {
     }
 
     @GetMapping("/usuario/{usuarioId}")
+    @Operation(
+            summary = "Listar ocorrências paginadas por usuário autor",
+            description = "Retorna o histórico paginado de ocorrências reportadas por um cidadão específico."
+    )
     public ResponseEntity<Page<OcorrenciaResponseDTO>> listarPorUsuario(
             @PathVariable Long usuarioId,
             @PageableDefault(size = 10, sort = "dataAbertura", direction = Sort.Direction.DESC) Pageable pageable
@@ -59,11 +75,28 @@ public class OcorrenciaController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Consultar detalhes de uma ocorrência por ID",
+            description = "Retorna os dados completos de um incidente urbano específico."
+    )
     public ResponseEntity<OcorrenciaResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(ocorrenciaService.buscarPorId(id));
     }
 
+    @PostMapping("/{id}/triagem-ia")
+    @Operation(
+            summary = "Executar triagem técnica da ocorrência com Spring AI + Google Gemini (Exclusivo ROLE_GESTOR)",
+            description = "Aciona o modelo gratuito gemini-1.5-flash (Google AI Studio) via Spring AI para classificar a urgência, recomendar a secretaria municipal e elaborar o parecer técnico de engenharia."
+    )
+    public ResponseEntity<TriagemIaResponseDTO> realizarTriagemIa(@PathVariable Long id) {
+        return ResponseEntity.ok(ocorrenciaService.realizarTriagemIa(id));
+    }
+
     @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Atualizar status da ocorrência (Exclusivo ROLE_GESTOR)",
+            description = "Permite ao gestor público atualizar o status do chamado urbano (ex.: EM_ANALISE, EM_EXECUCAO, CONCLUIDO, CANCELADO)."
+    )
     public ResponseEntity<OcorrenciaResponseDTO> atualizarStatus(
             @PathVariable Long id,
             @Valid @RequestBody OcorrenciaStatusUpdateDTO dto
@@ -72,10 +105,13 @@ public class OcorrenciaController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Excluir ocorrência urbana (Exclusivo ROLE_GESTOR)",
+            description = "Remove uma ocorrência que ainda não esteja em execução por uma equipe de campo."
+    )
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
         ocorrenciaService.excluir(id);
         return ResponseEntity.noContent().build();
     }
 
 }
-

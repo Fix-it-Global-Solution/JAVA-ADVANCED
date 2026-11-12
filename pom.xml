@@ -20,7 +20,21 @@
     <properties>
         <java.version>21</java.version>
         <java-jwt.version>4.4.0</java-jwt.version>
+        <spring-ai.version>1.0.0-M4</spring-ai.version>
+        <springdoc.version>2.5.0</springdoc.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Web -->
@@ -54,6 +68,25 @@
             <version>${java-jwt.version}</version>
         </dependency>
 
+        <!-- Spring Boot Starter AMQP (RabbitMQ) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <!-- Spring AI Core (ChatModel & ChatClient integrados ao Google Gemini AI Studio) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-core</artifactId>
+        </dependency>
+
+        <!-- Springdoc OpenAPI 3 / Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
         <!-- Oracle Database JDBC Driver (prod / default) -->
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
@@ -75,7 +108,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Boot Test & Security Test -->
+        <!-- Spring Boot Test, Security Test & RabbitMQ Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -86,7 +119,23 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

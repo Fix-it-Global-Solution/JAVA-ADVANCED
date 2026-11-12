@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Fix-It API - Testes de Segurança (JWT + RBAC)",
-    "description": "Coleção completa para testar registro, login JWT e bloqueio de rotas por perfil (ROLE_CIDADAO vs ROLE_GESTOR).",
+    "name": "Fix-It API - Testes de Segurança (JWT + RBAC) e Spring AI",
+    "description": "Coleção completa para testar registro, login JWT, bloqueio de rotas por perfil (ROLE_CIDADAO vs ROLE_GESTOR) e Triagem Técnica com Spring AI.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -223,7 +223,50 @@
           "path": ["api", "v1", "ocorrencias", "1", "status"]
         }
       }
+    },
+    {
+      "name": "Passo 7 (SPRING AI) - Gestor Executa Triagem Técnica IA (200 OK)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenGestor}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ocorrencias/1/triagem-ia",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "ocorrencias", "1", "triagem-ia"]
+        }
+      }
+    },
+    {
+      "name": "Passo 8 (SPRING AI) - Gestor Despacha Ordem de Serviço com IA (201 Created)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenGestor}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ordens-servico/despacho-ia/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "ordens-servico", "despacho-ia", "1"]
+        }
+      }
     }
   ]
 }
-

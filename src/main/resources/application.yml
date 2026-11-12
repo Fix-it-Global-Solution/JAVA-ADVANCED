@@ -5,9 +5,26 @@ spring:
     default: prod
   jpa:
     open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    connection-timeout: 3000
 
 server:
   port: ${SERVER_PORT:8080}
+
+app:
+  ai:
+    gemini:
+      api-key: ${GEMINI_API_KEY:chave-demonstracao-google-ai-studio}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      temperature: 0.2
+  rabbitmq:
+    exchange: fixit.zeladoria.exchange
+    queue: fila-triagem-zeladoria
+    routing-key: fixit.ocorrencia.triagem
 
 api:
   security:

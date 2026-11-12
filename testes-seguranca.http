@@ -1,5 +1,5 @@
- ### ============================================================================
-### FIX-IT API — ROTEIRO DE TESTES DE SEGURANÇA (JWT + RBAC)
+### ============================================================================
+### FIX-IT API — ROTEIRO DE TESTES DE SEGURANÇA (JWT + RBAC) E SPRING AI
 ### ============================================================================
 @baseUrl = http://localhost:8080
 
@@ -107,31 +107,14 @@ Authorization: Bearer {{tokenGestor}}
 
 
 ### ============================================================================
-### PASSO EXTRA 7A (BLOQUEADO): Cidadão tenta despachar Ordem de Serviço (Esperado: 403 Forbidden)
+### PASSO 7 (SPRING AI): Gestor executa Triagem Técnica Inteligente com IA (Esperado: 200 OK)
 ### ============================================================================
-POST {{baseUrl}}/api/v1/ordens-servico
-Content-Type: application/json
-Authorization: Bearer {{tokenCidadao}}
-
-{
-  "ocorrenciaId": 1,
-  "nivelUrgencia": "ALTA",
-  "equipeResponsavel": "Secretaria Municipal de Subprefeituras - Equipe Tapa-Buraco",
-  "dataPrevistaConclusao": "2026-11-25"
-}
-
-
-### ============================================================================
-### PASSO EXTRA 7B (PERMITIDO): Gestor despacha Ordem de Serviço (Esperado: 201 Created)
-### ============================================================================
-POST {{baseUrl}}/api/v1/ordens-servico
-Content-Type: application/json
+POST {{baseUrl}}/api/v1/ocorrencias/1/triagem-ia
 Authorization: Bearer {{tokenGestor}}
 
-{
-  "ocorrenciaId": 1,
-  "nivelUrgencia": "ALTA",
-  "equipeResponsavel": "Secretaria Municipal de Subprefeituras - Equipe Tapa-Buraco",
-  "dataPrevistaConclusao": "2026-11-25"
-}
 
+### ============================================================================
+### PASSO 8 (SPRING AI): Gestor despacha Ordem de Serviço Automatizada com IA (Esperado: 201 Created)
+### ============================================================================
+POST {{baseUrl}}/api/v1/ordens-servico/despacho-ia/1
+Authorization: Bearer {{tokenGestor}}

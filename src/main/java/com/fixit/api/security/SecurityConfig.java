@@ -48,16 +48,17 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos (Autenticação, Cadastro, Documentação Swagger e H2 Console)
+                        // Endpoints públicos (Autenticação, Cadastro, Documentação Swagger/OpenAPI e H2 Console)
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/registrar").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
 
                         // Operações exclusivas de Gestor Público (ROLE_GESTOR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ocorrencias/*/triagem-ia").hasRole("GESTOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/ocorrencias/*/status").hasRole("GESTOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/ocorrencias/*").hasRole("GESTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ordens-servico").hasRole("GESTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ordens-servico/**").hasRole("GESTOR")
 
                         // Operações permitidas para Cidadão (ROLE_CIDADAO) e Gestor (ROLE_GESTOR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/ocorrencias").hasAnyRole("CIDADAO", "GESTOR")
@@ -117,8 +118,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        configuration.setExposedHeaders(List.of("Location"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        configuration.setExposedHeaders(List.of("Location", "Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -127,4 +128,3 @@ public class SecurityConfig {
     }
 
 }
-

@@ -3,8 +3,10 @@ package com.fixit.api.service;
 import com.fixit.api.dto.OcorrenciaRequestDTO;
 import com.fixit.api.dto.OcorrenciaResponseDTO;
 import com.fixit.api.dto.OcorrenciaStatusUpdateDTO;
+import com.fixit.api.dto.TriagemIaResponseDTO;
 import com.fixit.api.exception.BusinessException;
 import com.fixit.api.exception.ResourceNotFoundException;
+import com.fixit.api.messaging.OcorrenciaEventPublisher;
 import com.fixit.api.model.Ocorrencia;
 import com.fixit.api.model.Usuario;
 import com.fixit.api.model.enums.StatusOcorrencia;
@@ -21,6 +23,8 @@ public class OcorrenciaService {
 
     private final OcorrenciaRepository ocorrenciaRepository;
     private final UsuarioService usuarioService;
+    private final TriagemIaService triagemIaService;
+    private final OcorrenciaEventPublisher ocorrenciaEventPublisher;
 
     @Transactional
     public OcorrenciaResponseDTO criar(OcorrenciaRequestDTO dto) {
@@ -38,6 +42,8 @@ public class OcorrenciaService {
                 .build();
 
         Ocorrencia salva = ocorrenciaRepository.save(ocorrencia);
+        ocorrenciaEventPublisher.publicarEventoTriagem(salva);
+
         return OcorrenciaResponseDTO.fromEntity(salva);
     }
 
@@ -61,6 +67,23 @@ public class OcorrenciaService {
     public OcorrenciaResponseDTO buscarPorId(Long id) {
         Ocorrencia ocorrencia = buscarEntidadePorId(id);
         return OcorrenciaResponseDTO.fromEntity(ocorrencia);
+    }
+
+    @Transactional
+    public TriagemIaResponseDTO realizarTriagemIa(Long id) {
+        Ocorrencia ocorrencia = buscarEntidadePorId(id);
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.CANCELADO
+                || ocorrencia.getStatus() == StatusOcorrencia.CONCLUIDO) {
+            throw new BusinessException("Não é possível realizar triagem de IA em ocorrência com status: " + ocorrencia.getStatus());
+        }
+
+        if (ocorrencia.getStatus() == StatusOcorrencia.ABERTO) {
+            ocorrencia.setStatus(StatusOcorrencia.EM_ANALISE);
+            ocorrenciaRepository.save(ocorrencia);
+        }
+
+        return triagemIaService.analisarOcorrencia(ocorrencia);
     }
 
     @Transactional
@@ -94,4 +117,3 @@ public class OcorrenciaService {
     }
 
 }
-

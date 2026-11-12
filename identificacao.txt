@@ -1,0 +1,9 @@
+Projeto: Fix-It — Plataforma Inteligente de Zeladoria Urbana (CitizenTech)
+Disciplina: Java Advanced
+Turma: 2TDSPF
+
+Integrantes:
+- Gabriel Sbrana Campos | RM: 565849 | Turma: 2TDSPF
+- Moisés Waidemann Molinillo | RM: 563719 | Turma: 2TDSPF
+- Richard Freitas | RM: 566127 | Turma: 2TDSPF
+- Thiago Rodrigues da Mota | RM: 563650 | Turma: 2TDSPF
