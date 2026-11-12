@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: fixit-api
+  profiles:
+    default: prod
+  jpa:
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+api:
+  security:
+    token:
+      secret: ${JWT_SECRET:fixit-secret-key-fiap-2026-global-solution-token-jwt}
+      expiration-hours: 8
+
+---
+# ===================================================================
+# PERFIL: PROD / DEFAULT (Oracle Database via JDBC)
+# ===================================================================
+spring:
+  config:
+    activate:
+      on-profile: prod,default
+  datasource:
+    url: ${ORACLE_DB_URL:jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL}
+    username: ${ORACLE_DB_USERNAME:rm_usuario}
+    password: ${ORACLE_DB_PASSWORD:senha_secreta}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    properties:
+      hibernate:
+        format_sql: true
+
+---
+# ===================================================================
+# PERFIL: TEST (H2 Database em Memória para Testes Rápidos)
+# ===================================================================
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:fixitdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=Oracle
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true

@@ -1,0 +1,137 @@
+ ### ============================================================================
+### FIX-IT API — ROTEIRO DE TESTES DE SEGURANÇA (JWT + RBAC)
+### ============================================================================
+@baseUrl = http://localhost:8080
+
+# Caso seu cliente HTTP (VS Code REST Client) capture automaticamente via @name,
+# basta executar os Passos 3A e 3B. Caso contrário, substitua abaixo pelos tokens
+# retornados no JSON de login:
+@tokenCidadao = {{loginCidadao.response.body.token}}
+@tokenGestor = {{loginGestor.response.body.token}}
+
+
+### ============================================================================
+### PASSO 1: Registrar usuário com perfil ROLE_CIDADAO (Esperado: 201 Created)
+### ============================================================================
+POST {{baseUrl}}/api/v1/auth/registrar
+Content-Type: application/json
+
+{
+  "nome": "Carlos Eduardo Silva",
+  "email": "cidadao@fixit.com.br",
+  "senha": "Password@123",
+  "perfil": "ROLE_CIDADAO"
+}
+
+
+### ============================================================================
+### PASSO 2: Registrar usuário com perfil ROLE_GESTOR (Esperado: 201 Created)
+### ============================================================================
+POST {{baseUrl}}/api/v1/auth/registrar
+Content-Type: application/json
+
+{
+  "nome": "Mariana Souza (Gestora Pública)",
+  "email": "gestor@fixit.com.br",
+  "senha": "Password@123",
+  "perfil": "ROLE_GESTOR"
+}
+
+
+### ============================================================================
+### PASSO 3A: Login do Cidadão — Gera Token JWT com ROLE_CIDADAO (Esperado: 200 OK)
+### ============================================================================
+# @name loginCidadao
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "cidadao@fixit.com.br",
+  "senha": "Password@123"
+}
+
+
+### ============================================================================
+### PASSO 3B: Login do Gestor — Gera Token JWT com ROLE_GESTOR (Esperado: 200 OK)
+### ============================================================================
+# @name loginGestor
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "gestor@fixit.com.br",
+  "senha": "Password@123"
+}
+
+
+### ============================================================================
+### PASSO 4 (PERMITIDO): Cidadão abre uma Ocorrência Urbana (Esperado: 201 Created)
+### ============================================================================
+POST {{baseUrl}}/api/v1/ocorrencias
+Content-Type: application/json
+Authorization: Bearer {{tokenCidadao}}
+
+{
+  "titulo": "Cratera na faixa da direita da Av. Paulista",
+  "descricao": "Buraco profundo próximo ao cruzamento com a Rua Augusta causando risco de acidentes para motociclistas e ciclistas.",
+  "latitude": -23.558680,
+  "longitude": -46.659620,
+  "enderecoReferencia": "Av. Paulista, 2000 - Bela Vista, São Paulo - SP",
+  "fotoUrl": "https://cdn.fixit.com.br/ocorrencias/cratera-paulista-2000.jpg",
+  "usuarioId": 1
+}
+
+
+### ============================================================================
+### PASSO 5 (BLOQUEADO): Cidadão tenta alterar status da Ocorrência (Esperado: 403 Forbidden)
+### ============================================================================
+PATCH {{baseUrl}}/api/v1/ocorrencias/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenCidadao}}
+
+{
+  "novoStatus": "EM_ANALISE"
+}
+
+
+### ============================================================================
+### PASSO 6 (PERMITIDO): Gestor altera o status da Ocorrência (Esperado: 200 OK)
+### ============================================================================
+PATCH {{baseUrl}}/api/v1/ocorrencias/1/status
+Content-Type: application/json
+Authorization: Bearer {{tokenGestor}}
+
+{
+  "novoStatus": "EM_ANALISE"
+}
+
+
+### ============================================================================
+### PASSO EXTRA 7A (BLOQUEADO): Cidadão tenta despachar Ordem de Serviço (Esperado: 403 Forbidden)
+### ============================================================================
+POST {{baseUrl}}/api/v1/ordens-servico
+Content-Type: application/json
+Authorization: Bearer {{tokenCidadao}}
+
+{
+  "ocorrenciaId": 1,
+  "nivelUrgencia": "ALTA",
+  "equipeResponsavel": "Secretaria Municipal de Subprefeituras - Equipe Tapa-Buraco",
+  "dataPrevistaConclusao": "2026-11-25"
+}
+
+
+### ============================================================================
+### PASSO EXTRA 7B (PERMITIDO): Gestor despacha Ordem de Serviço (Esperado: 201 Created)
+### ============================================================================
+POST {{baseUrl}}/api/v1/ordens-servico
+Content-Type: application/json
+Authorization: Bearer {{tokenGestor}}
+
+{
+  "ocorrenciaId": 1,
+  "nivelUrgencia": "ALTA",
+  "equipeResponsavel": "Secretaria Municipal de Subprefeituras - Equipe Tapa-Buraco",
+  "dataPrevistaConclusao": "2026-11-25"
+}
+

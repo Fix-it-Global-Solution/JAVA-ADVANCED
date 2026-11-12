@@ -1,0 +1,229 @@
+{
+  "info": {
+    "name": "Fix-It API - Testes de Segurança (JWT + RBAC)",
+    "description": "Coleção completa para testar registro, login JWT e bloqueio de rotas por perfil (ROLE_CIDADAO vs ROLE_GESTOR).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "tokenCidadao",
+      "value": ""
+    },
+    {
+      "key": "tokenGestor",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Passo 1 - Registrar Cidadão (ROLE_CIDADAO)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Carlos Eduardo Silva\",\n  \"email\": \"cidadao@fixit.com.br\",\n  \"senha\": \"Password@123\",\n  \"perfil\": \"ROLE_CIDADAO\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/registrar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "registrar"]
+        }
+      }
+    },
+    {
+      "name": "Passo 2 - Registrar Gestor (ROLE_GESTOR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Mariana Souza (Gestora Pública)\",\n  \"email\": \"gestor@fixit.com.br\",\n  \"senha\": \"Password@123\",\n  \"perfil\": \"ROLE_GESTOR\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/registrar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "registrar"]
+        }
+      }
+    },
+    {
+      "name": "Passo 3A - Login Cidadão (Salva tokenCidadao automaticamente)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.collectionVariables.set('tokenCidadao', jsonData.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"cidadao@fixit.com.br\",\n  \"senha\": \"Password@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Passo 3B - Login Gestor (Salva tokenGestor automaticamente)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.collectionVariables.set('tokenGestor', jsonData.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"gestor@fixit.com.br\",\n  \"senha\": \"Password@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Passo 4 (PERMITIDO) - Cidadão Cria Ocorrência (201 Created)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenCidadao}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Cratera na faixa da direita da Av. Paulista\",\n  \"descricao\": \"Buraco profundo próximo ao cruzamento com a Rua Augusta causando risco de acidentes para motociclistas e ciclistas.\",\n  \"latitude\": -23.558680,\n  \"longitude\": -46.659620,\n  \"enderecoReferencia\": \"Av. Paulista, 2000 - Bela Vista, São Paulo - SP\",\n  \"fotoUrl\": \"https://cdn.fixit.com.br/ocorrencias/cratera-paulista-2000.jpg\",\n  \"usuarioId\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ocorrencias",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "ocorrencias"]
+        }
+      }
+    },
+    {
+      "name": "Passo 5 (BLOQUEADO) - Cidadão Tenta Alterar Status (403 Forbidden)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenCidadao}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"novoStatus\": \"EM_ANALISE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ocorrencias/1/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "ocorrencias", "1", "status"]
+        }
+      }
+    },
+    {
+      "name": "Passo 6 (PERMITIDO) - Gestor Altera Status (200 OK)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenGestor}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"novoStatus\": \"EM_ANALISE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ocorrencias/1/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "ocorrencias", "1", "status"]
+        }
+      }
+    }
+  ]
+}
+
