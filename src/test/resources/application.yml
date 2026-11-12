@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: fixit-api-test
+  datasource:
+    url: jdbc:h2:mem:fixitdb_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=Oracle
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    listener:
+      simple:
+        auto-startup: false
+
+app:
+  ai:
+    gemini:
+      api-key: chave-demonstracao-google-ai-studio
+      model: gemini-1.5-flash
+      temperature: 0.2
+  rabbitmq:
+    exchange: fixit.zeladoria.exchange
+    queue: fila-triagem-zeladoria
+    routing-key: fixit.ocorrencia.triagem
+
+api:
+  security:
+    token:
+      secret: fixit-secret-key-fiap-2026-global-solution-token-jwt-test
+      expiration-hours: 8
