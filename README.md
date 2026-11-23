@@ -21,6 +21,7 @@ Na gestão pública tradicional, chamados urbanos sofrem com triagem manual lent
 - **ODS 13 (Ação Contra a Mudança Global do Clima):** Prevenção ativa de alagamentos e enchentes urbanas por meio da priorização de desobstrução de bueiros e galerias pluviais.
 
 ---
+- **Vídeo Pitch para JAVA (Global Solution):** [Assistir no YouTube](https://youtu.be/OpLg6osDHTE?si=cPNGV-RUrtp7CZ1I)
 
 ## 2. Tecnologias Utilizadas e Requisitos Atendidos
 
